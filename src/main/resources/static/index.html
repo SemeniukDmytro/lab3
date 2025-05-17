@@ -1,7 +1,8 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/protobufjs/dist/protobuf.min.js"></script>
+  <meta charset="UTF-8" />
   <title>OpenID Connect Frontend</title>
   <style>
     body {
@@ -38,28 +39,47 @@
   <p>Click "Fetch User Info" to check authentication status.</p>
 </div>
 
+<div style="margin-top: 2rem;">
+  <button id="startStreamBtn" onclick="startStream()">Start Trade Stream</button>
+  <button id="stopStreamBtn" onclick="stopStream()" disabled>Stop Trade Stream</button>
+</div>
+
+<div id="btc-trade"><p>Waiting for BTC trade data...</p></div>
+<div id="eth-trade"><p>Waiting for ETH trade data...</p></div>
+<div id="bnb-trade"><p>Waiting for BNB trade data...</p></div>
+
 <script>
+  let socket = null;
+  let root = null;
+  let TradeMessage = null;
+
+  protobuf.load("/proto/Trade.proto", function(err, loadedRoot) {
+    if (err) {
+      console.error("Protobuf load error:", err);
+      return;
+    }
+    root = loadedRoot;
+    TradeMessage = root.lookupType("Trade");
+    console.log("✅ Protobuf loaded and message type found");
+  });
+
   function fetchUserInfo() {
-    fetch('https://localhost:8080/user/info', {
-      credentials: 'include',
-    })
+    fetch('https://localhost:8080/user/info', { credentials: 'include' })
             .then(response => {
-              if (!response.ok) {
-                throw new Error('User not authenticated');
-              }
+              if (!response.ok) throw new Error('User not authenticated');
               return response.json();
             })
             .then(data => {
               document.getElementById('status').innerHTML = `
-                        <p>✅ Logged in as <strong>${data.username}</strong></p>
-                        <pre>User ID: ${data.userId}</pre>
-                    `;
+          <p>✅ Logged in as <strong>${data.username}</strong></p>
+          <pre>User ID: ${data.userId}</pre>
+        `;
             })
             .catch(error => {
               document.getElementById('status').innerHTML = `
-                        <p>❌ Not logged in</p>
-                        <p class="error">Error: ${error.message}</p>
-                    `;
+          <p>❌ Not logged in</p>
+          <p class="error">Error: ${error.message}</p>
+        `;
             });
   }
 
@@ -68,8 +88,90 @@
   }
 
   function logout() {
+    if (socket) stopStream();
     document.cookie = 'access_token=; path=/; max-age=0';
     document.getElementById('status').innerHTML = '<p>Logged out. Click "Fetch User Info" to check again.</p>';
+  }
+
+  function startStream() {
+    if (!TradeMessage) {
+      alert("Protobuf message not loaded yet. Please wait.");
+      return;
+    }
+    if (socket) {
+      console.warn("Stream already started");
+      return;
+    }
+
+    socket = new WebSocket("wss://localhost:8080/ws/btc");
+    socket.binaryType = 'arraybuffer';
+
+    socket.onopen = () => {
+      console.log("✅ Connected to trade stream");
+      document.getElementById('startStreamBtn').disabled = true;
+      document.getElementById('stopStreamBtn').disabled = false;
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const buffer = new Uint8Array(event.data);
+        const decoded = TradeMessage.decode(buffer);
+
+        const coin = decoded.coin || "unknown";
+        const price = decoded.price || "N/A";
+        const quantity = decoded.quantity || "N/A";
+        const tradeTime = decoded.tradeTime ? new Date(Number(decoded.tradeTime)) : null;
+
+        const coinToId = {
+          btcusdt: "btc-trade",
+          ethusdt: "eth-trade",
+          bnbusdt: "bnb-trade"
+        };
+
+        const containerId = coinToId[coin.toLowerCase()];
+
+        if (containerId) {
+          document.getElementById(containerId).innerHTML = `
+            <pre>
+Coin: ${coin}
+Price: ${price}
+Quantity: ${quantity}
+Time: ${tradeTime ? tradeTime.toLocaleTimeString() : "N/A"}
+            </pre>
+          `;
+        } else {
+          console.warn("Unknown coin in protobuf:", coin);
+        }
+      } catch (e) {
+        console.error("Failed to decode protobuf message:", e);
+      }
+    };
+
+    socket.onclose = () => {
+      console.log("⚠️ Disconnected from trade stream");
+      document.getElementById('startStreamBtn').disabled = false;
+      document.getElementById('stopStreamBtn').disabled = true;
+      clearTradeData();
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+  }
+
+  function stopStream() {
+    if (!socket) {
+      console.warn("Stream not started");
+      return;
+    }
+    socket.close();
+    socket = null;
+  }
+
+  function clearTradeData() {
+    document.getElementById('btc-trade').innerHTML = '<p>Trade stream stopped.</p>';
+    document.getElementById('eth-trade').innerHTML = '<p>Trade stream stopped.</p>';
+    document.getElementById('bnb-trade').innerHTML = '<p>Trade stream stopped.</p>';
   }
 </script>
 </body>

@@ -1,0 +1,8 @@
+﻿syntax = "proto3";
+message Trade {
+  string stream = 1;
+  string coin = 2;
+  string price = 3;
+  string quantity = 4;
+  int64 tradeTime = 5;
+}

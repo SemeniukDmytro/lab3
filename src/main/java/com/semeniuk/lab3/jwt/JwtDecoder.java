@@ -25,7 +25,6 @@ public class JwtDecoder {
             String jwksJson = restTemplate.getForObject(openIdConnectProperties.getConnectEndpoint() + "/.well-known/jwks",
                     String.class);
 
-            // System.out.println("JWKS JSON: " + jwksJson);
 
             JWKSet jwkSet = JWKSet.parse(jwksJson);
             List<JWK> keys = jwkSet.getKeys();

@@ -1,0 +1,10 @@
+﻿syntax = "proto3";
+option java_package = "com.semeniuk.lab3.protobuf";
+option java_outer_classname = "TradeOuterClass";
+message Trade {
+  string stream = 1;
+  string coin = 2;
+  string price = 3;
+  string quantity = 4;
+  int64 tradeTime = 5;
+}
