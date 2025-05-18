@@ -25,7 +25,7 @@ import java.util.Map;
 public class AuthController {
 
     private final OpenIdConnectProperties openIdConnectProperties;
-    private final String redirectUri = "https://localhost:8080/auth/callback";
+    private final String redirectUri = "https://localhost:8443/auth/callback";
 
     public AuthController(OpenIdConnectProperties openIdConnectProperties) {
         this.openIdConnectProperties = openIdConnectProperties;

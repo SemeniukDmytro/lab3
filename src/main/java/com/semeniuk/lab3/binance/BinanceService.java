@@ -32,7 +32,6 @@ public class BinanceService {
                 @Override
                 public void onMessage(String message) {
                     try {
-                        // Parse top-level Binance JSON
                         JsonObject root = JsonParser.parseString(message).getAsJsonObject();
                         String stream = root.get("stream").getAsString();
                         JsonObject data = root.getAsJsonObject("data");

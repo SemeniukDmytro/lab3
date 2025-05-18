@@ -64,7 +64,7 @@
   });
 
   function fetchUserInfo() {
-    fetch('https://localhost:8080/user/info', { credentials: 'include' })
+    fetch('https://localhost:8443/user/info', { credentials: 'include' })
             .then(response => {
               if (!response.ok) throw new Error('User not authenticated');
               return response.json();
@@ -84,7 +84,7 @@
   }
 
   function login() {
-    window.location.href = 'https://localhost:8080/auth/login';
+    window.location.href = 'https://localhost:8443/auth/login';
   }
 
   function logout() {
@@ -103,7 +103,7 @@
       return;
     }
 
-    socket = new WebSocket("wss://localhost:8080/ws/btc");
+    socket = new WebSocket("wss://localhost:8443/ws/btc");
     socket.binaryType = 'arraybuffer';
 
     socket.onopen = () => {
