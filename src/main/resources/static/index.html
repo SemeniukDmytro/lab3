@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/protobufjs/dist/protobuf.min.js"></script>
+  <script type="module" src="/trade.js"></script>
   <meta charset="UTF-8" />
   <title>OpenID Connect Frontend</title>
   <style>
@@ -48,20 +48,10 @@
 <div id="eth-trade"><p>Waiting for ETH trade data...</p></div>
 <div id="bnb-trade"><p>Waiting for BNB trade data...</p></div>
 
-<script>
+<script type="module">
+  import { decodeTrade } from '/trade.js';
   let socket = null;
   let root = null;
-  let TradeMessage = null;
-
-  protobuf.load("/proto/Trade.proto", function(err, loadedRoot) {
-    if (err) {
-      console.error("Protobuf load error:", err);
-      return;
-    }
-    root = loadedRoot;
-    TradeMessage = root.lookupType("Trade");
-    console.log("✅ Protobuf loaded and message type found");
-  });
 
   function fetchUserInfo() {
     fetch('https://localhost:8443/user/info', { credentials: 'include' })
@@ -94,10 +84,7 @@
   }
 
   function startStream() {
-    if (!TradeMessage) {
-      alert("Protobuf message not loaded yet. Please wait.");
-      return;
-    }
+
     if (socket) {
       console.warn("Stream already started");
       return;
@@ -115,7 +102,7 @@
     socket.onmessage = (event) => {
       try {
         const buffer = new Uint8Array(event.data);
-        const decoded = TradeMessage.decode(buffer);
+        const decoded = decodeTrade(buffer);
 
         const coin = decoded.coin || "unknown";
         const price = decoded.price || "N/A";
@@ -173,6 +160,12 @@ Time: ${tradeTime ? tradeTime.toLocaleTimeString() : "N/A"}
     document.getElementById('eth-trade').innerHTML = '<p>Trade stream stopped.</p>';
     document.getElementById('bnb-trade').innerHTML = '<p>Trade stream stopped.</p>';
   }
+
+  window.fetchUserInfo = fetchUserInfo;
+  window.login = login;
+  window.logout = logout;
+  window.startStream = startStream;
+  window.stopStream = stopStream;
 </script>
 </body>
 </html>

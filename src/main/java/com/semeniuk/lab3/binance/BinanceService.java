@@ -2,12 +2,12 @@ package com.semeniuk.lab3.binance;
 
 import com.nimbusds.jose.shaded.gson.JsonObject;
 import com.nimbusds.jose.shaded.gson.JsonParser;
+import com.semeniuk.lab3.protobuf.TradeOuterClass;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import com.semeniuk.lab3.protobuf.TradeOuterClass.Trade;
 @Component
 public class BinanceService {
 
@@ -36,14 +36,14 @@ public class BinanceService {
                         String stream = root.get("stream").getAsString();
                         JsonObject data = root.getAsJsonObject("data");
 
-                        Trade.Builder tradeBuilder = Trade.newBuilder()
+                        TradeOuterClass.Trade.Builder tradeBuilder = TradeOuterClass.Trade.newBuilder()
                                 .setStream(stream)
                                 .setCoin(data.get("s").getAsString())
                                 .setPrice(data.get("p").getAsString())
                                 .setQuantity(data.get("q").getAsString())
                                 .setTradeTime(data.get("T").getAsLong());
 
-                        Trade tradeProto = tradeBuilder.build();
+                        TradeOuterClass.Trade tradeProto = tradeBuilder.build();
                         webSocketHandler.broadcastProtobuf(tradeProto.toByteArray());
 
                     } catch (Exception e) {
